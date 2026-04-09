@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+from urllib.parse import quote as url_quote
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.text import slugify
@@ -274,12 +275,12 @@ class WikipediaService:
             return cached
 
         try:
-            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{requests.utils.quote(search_title)}"
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{url_quote(search_title, safe='')}"
             response = requests.get(url, timeout=5)
 
             if response.status_code == 404 and year:
                 # Fallback without year
-                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{requests.utils.quote(f'{title} (film)')}"
+                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{url_quote(f'{title} (film)', safe='')}"
                 response = requests.get(url, timeout=5)
 
             if response.status_code == 200:
