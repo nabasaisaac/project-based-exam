@@ -264,7 +264,7 @@ class WikipediaService:
     @staticmethod
     def get_movie_summary(title: str, year: Optional[int] = None) -> dict:
         """getting  Wikipedia summary for a movie."""
-        search_title = f"{title} (film)" if year else f"{title} (film)"
+        search_title = f"{title} (film)"
         if year:
             search_title = f"{title} ({year} film)"
 
