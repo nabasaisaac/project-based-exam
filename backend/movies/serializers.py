@@ -124,7 +124,11 @@ class TMDBMovieSerializer(serializers.Serializer):
     popularity = serializers.FloatField()
     poster_path = serializers.CharField(allow_blank=True, allow_null=True)
     backdrop_path = serializers.CharField(allow_blank=True, allow_null=True)
-    genre_ids = serializers.ListField(child=serializers.IntegerField())
+    genre_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        default=list,
+    )
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
