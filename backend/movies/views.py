@@ -1,3 +1,12 @@
+
+"""
+Views for the Movies app.
+
+Provides REST endpoints for movie search, trending, discovery,
+genre browsing, mood-based filtering, and movie comparisons.
+All TMDB data is fetched via TMDBService and serialized for the frontend.
+"""
+
 import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -16,6 +25,19 @@ from .services.tmdb_service import TMDBService, MovieSyncService, WikipediaServi
 logger = logging.getLogger(__name__)
 tmdb = TMDBService()
 sync_service = MovieSyncService()
+
+
+def _paginated_tmdb_response(data: dict, page: int) -> dict:
+    """Build a consistent paginated response dict from raw TMDB data."""
+    results = data.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return {
+        "results": serializer.data,
+        "total_pages": data.get("total_pages", 1),
+        "total_results": data.get("total_results", 0),
+        "page": page,
+    }
+
 
 ## Movie ViewSet
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
@@ -120,11 +142,14 @@ class PersonViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-## standalone endpoints
+# ---------------------------------------------------------------------------
+# Standalone API endpoints (function-based views)
+# ---------------------------------------------------------------------------
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def search_movies(request):
+    """Search TMDB movies by title. Requires query param `q`."""
     query = request.query_params.get("q", "").strip()
     page = int(request.query_params.get("page", 1))
 
@@ -135,55 +160,38 @@ def search_movies(request):
         )
 
     data = tmdb.search_movies(query, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "total_results": data.get("total_results", 0),
-        "page": page,
-        "query": query,
-    })
+    response = _paginated_tmdb_response(data, page)
+    response["query"] = query
+    return Response(response)
 
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def trending_movies(request):
+    """Return trending movies for a given time window (day/week)."""
     window = request.query_params.get("window", "week")
     page = int(request.query_params.get("page", 1))
 
     data = tmdb.get_trending_movies(time_window=window, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "page": page,
-    })
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def now_playing(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_now_playing(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    """Return movies currently in theatres."""
+    page = int(request.query_params.get("page", 1))
+    data = tmdb.get_now_playing(page=page)
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_rated(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_top_rated_movies(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    """Return highest-rated movies of all time."""
+    page = int(request.query_params.get("page", 1))
+    data = tmdb.get_top_rated_movies(page=page)
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
