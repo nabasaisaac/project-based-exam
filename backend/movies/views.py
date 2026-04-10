@@ -165,33 +165,6 @@ def search_movies(request):
     return Response(response)
 
 
-## standalone endpoints
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def search_movies(request):
-    query = request.query_params.get("q", "").strip()
-    page = int(request.query_params.get("page", 1))
-
-    if not query:
-        return Response(
-            {"error": "Query parameter 'q' is required"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    data = tmdb.search_movies(query, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "total_results": data.get("total_results", 0),
-        "page": page,
-        "query": query,
-    })
-
-
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def trending_movies(request):
