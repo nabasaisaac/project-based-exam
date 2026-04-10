@@ -188,12 +188,10 @@ def now_playing(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_rated(request):
+    """Return highest-rated movies of all time."""
     page = int(request.query_params.get("page", 1))
     data = tmdb.get_top_rated_movies(page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-    response_data = {"results": serializer.data, "page": page}
-    return Response(response_data)
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
