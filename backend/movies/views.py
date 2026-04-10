@@ -179,12 +179,12 @@ def trending_movies(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def now_playing(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_now_playing(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    page = int(request.query_params.get("page", 1))
+    data = tmdb.get_now_playing(page=page)
+    results = data.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    response_data = {"results": serializer.data, "page": page}
+    return Response(response_data)
 
 
 @api_view(["GET"])
