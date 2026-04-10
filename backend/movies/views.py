@@ -165,7 +165,7 @@ def search_movies(request):
     return Response(response)
 
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def trending_movies(request):
     window = request.query_params.get("window", "week")
