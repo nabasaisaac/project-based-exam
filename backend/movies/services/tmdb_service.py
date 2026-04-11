@@ -1,3 +1,5 @@
+"""TMDB API client, syncing utilities, and Wikipedia enrichment helpers."""
+
 import logging
 from typing import Optional
 from urllib.parse import quote as url_quote
