@@ -48,3 +48,146 @@ const THEMES: MarathonTheme[] = [
   { slug: "animated-adventure", label: "Animated Adventure", description: "Magical stories for the young at heart", emoji: "✨" },
   { slug: "director-spotlight", label: "Award Winners", description: "Critically acclaimed masterpieces", emoji: "🏆" },
 ];
+
+
+export default function MarathonPage() {
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [movieCount, setMovieCount] = useState(3);
+  const [marathon, setMarathon] = useState<MarathonResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"pick" | "count" | "result">("pick");
+
+  const generateMarathon = useCallback(async () => {
+    if (!selectedTheme) return;
+    setLoading(true);
+    try {
+      const data = await moviesAPI.generateMarathon(selectedTheme, movieCount);
+      setMarathon(data);
+      setStep("result");
+    } catch {
+      setMarathon(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedTheme, movieCount]);
+
+  const reset = () => {
+    setSelectedTheme(null);
+    setMarathon(null);
+    setStep("pick");
+    setMovieCount(3);
+  };
+
+  return (
+    <main className="min-h-screen bg-surface-0 pt-24 pb-16 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-gold text-xs font-medium mb-4">
+            <Popcorn className="w-3.5 h-3.5" />
+            New Feature
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-display font-bold mb-3">
+            Movie Night <span className="text-gold">Planner</span>
+          </h1>
+          <p className="text-white/40 text-lg max-w-lg mx-auto">
+            Pick a vibe, choose how many films, and get a curated marathon
+            with total runtime and intermission breaks.
+          </p>
+        </div>
+
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-3 mb-10">
+          {["Theme", "Count", "Marathon"].map((label, i) => {
+            const stepIndex = ["pick", "count", "result"].indexOf(step);
+            const active = i <= stepIndex;
+            return (
+              <div key={label} className="flex items-center gap-3">
+                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all ${active ? "bg-gold/15 text-gold border border-gold/25" : "bg-white/5 text-white/25 border border-white/5"}`}>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${active ? "bg-gold text-surface-0" : "bg-white/10 text-white/30"}`}>
+                    {i + 1}
+                  </span>
+                  {label}
+                </div>
+                {i < 2 && <ChevronRight className={`w-3.5 h-3.5 ${active ? "text-gold/40" : "text-white/10"}`} />}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Step 1: Pick Theme */}
+        {step === "pick" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+            {THEMES.map((theme) => (
+              <button
+                key={theme.slug}
+                onClick={() => { setSelectedTheme(theme.slug); setStep("count"); }}
+                className={`group relative p-6 rounded-2xl border text-left transition-all duration-300 hover:scale-[1.02] ${
+                  selectedTheme === theme.slug
+                    ? "bg-gold/10 border-gold/30 shadow-lg shadow-gold/5"
+                    : "bg-white/[0.02] border-white/[0.06] hover:border-gold/20 hover:bg-white/[0.04]"
+                }`}
+              >
+                <span className="text-3xl block mb-3">{theme.emoji}</span>
+                <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-gold transition-colors">
+                  {theme.label}
+                </h3>
+                <p className="text-white/35 text-sm">{theme.description}</p>
+                <ChevronRight className="absolute top-6 right-5 w-4 h-4 text-white/10 group-hover:text-gold/40 transition-colors" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 2: Pick Count */}
+        {step === "count" && (
+          <div className="max-w-md mx-auto text-center animate-fade-in">
+            <p className="text-white/40 mb-6">How many movies for your marathon?</p>
+            <div className="flex items-center justify-center gap-4 mb-8">
+              {[2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setMovieCount(n)}
+                  className={`w-16 h-16 rounded-2xl text-2xl font-bold transition-all duration-200 ${
+                    movieCount === n
+                      ? "bg-gold text-surface-0 shadow-lg shadow-gold/20 scale-110"
+                      : "bg-white/5 text-white/40 border border-white/10 hover:border-gold/20"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <p className="text-white/20 text-sm mb-8">
+              {movieCount === 2 && "A quick double-feature — perfect for a weeknight."}
+              {movieCount === 3 && "The sweet spot — a full evening of cinema."}
+              {movieCount === 4 && "Ambitious! Block out 6+ hours for this one."}
+              {movieCount === 5 && "Ultimate marathon mode. Snacks are mandatory."}
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => setStep("pick")}
+                className="px-5 py-2.5 rounded-xl bg-white/5 text-white/40 text-sm hover:bg-white/10 transition-all"
+              >
+                Back
+              </button>
+              <button
+                onClick={generateMarathon}
+                disabled={loading}
+                className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-gold to-gold-dim text-surface-0 font-semibold text-sm hover:shadow-lg hover:shadow-gold/20 transition-all disabled:opacity-50"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-surface-0/30 border-t-surface-0 rounded-full animate-spin" />
+                    Generating...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Generate Marathon
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
