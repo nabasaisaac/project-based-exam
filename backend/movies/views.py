@@ -1,3 +1,12 @@
+
+"""
+Views for the Movies app.
+
+Provides REST endpoints for movie search, trending, discovery,
+genre browsing, mood-based filtering, and movie comparisons.
+All TMDB data is fetched via TMDBService and serialized for the frontend.
+"""
+
 import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -16,6 +25,19 @@ from .services.tmdb_service import TMDBService, MovieSyncService, WikipediaServi
 logger = logging.getLogger(__name__)
 tmdb = TMDBService()
 sync_service = MovieSyncService()
+
+
+def _paginated_tmdb_response(data: dict, page: int) -> dict:
+    """Build a consistent paginated response dict from raw TMDB data."""
+    results = data.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return {
+        "results": serializer.data,
+        "total_pages": data.get("total_pages", 1),
+        "total_results": data.get("total_results", 0),
+        "page": page,
+    }
+
 
 ## Movie ViewSet
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
@@ -118,6 +140,29 @@ class PersonViewSet(viewsets.ReadOnlyModelViewSet):
 
         serializer = PersonDetailSerializer(person)
         return Response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+# Standalone API endpoints (function-based views)
+# ---------------------------------------------------------------------------
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def search_movies(request):
+    """Search TMDB movies by title. Requires query param `q`."""
+    query = request.query_params.get("q", "").strip()
+    page = int(request.query_params.get("page", 1))
+
+    if not query:
+        return Response(
+            {"error": "Query parameter 'q' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    data = tmdb.search_movies(query, page=page)
+    response = _paginated_tmdb_response(data, page)
+    response["query"] = query
+    return Response(response)
 
 
 ## standalone endpoints
