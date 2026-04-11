@@ -63,7 +63,7 @@ export default function MoodTeaser() {
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${mood.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                   <div className="relative z-10">
-                    <Icon className={`w-5 h-5 mx-auto mb-1.5 text-white/25 group-hover:${mood.iconColor} transition-colors`} />
+                    <Icon className={`w-5 h-5 mx-auto mb-1.5 text-white/25 ${mood.iconColor} transition-colors`} />
                     <p className="text-[11px] font-semibold text-white/50 group-hover:text-white/80 transition-colors">{mood.label}</p>
                   </div>
                 </Link>
