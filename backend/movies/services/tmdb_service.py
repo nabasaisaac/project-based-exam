@@ -1,5 +1,6 @@
 """TMDB API client, syncing utilities, and Wikipedia enrichment helpers."""
 
+import json
 import logging
 from typing import Optional
 from urllib.parse import quote as url_quote
@@ -27,9 +28,17 @@ class TMDBService:
 
     ### class helper functions
 
+    def _cache_ttl_for(self, endpoint: str) -> int:
+        if endpoint.startswith(("search/", "trending/")):
+            return CACHE_TTL_SHORT
+        if endpoint.startswith(("genre/", "person/")):
+            return CACHE_TTL_LONG
+        return CACHE_TTL_MEDIUM
+
     def _get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         """Make Get request to TMDB with caching."""
-        cache_key = f"tmdb:{endpoint}:{params}"
+        params_json = json.dumps(params or {}, sort_keys=True, separators=(",", ":"))
+        cache_key = f"tmdb:{endpoint}:{params_json}"
         cached = cache.get(cache_key)
         if cached:
             return cached
@@ -39,7 +48,7 @@ class TMDBService:
             response = self.session.get(url, params=params or {}, timeout=10)
             response.raise_for_status()
             data = response.json()
-            cache.set(cache_key, data, CACHE_TTL_MEDIUM)
+            cache.set(cache_key, data, self._cache_ttl_for(endpoint))
             return data
         except requests.RequestException as e:
             logger.error(f"TMDB API error for {endpoint}: {e}")
