@@ -197,7 +197,7 @@ def top_rated(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def movie_detail_tmdb(request, tmdb_id):
-
+    """Fetch full movie details from TMDB, optionally syncing to local DB."""
     sync = request.query_params.get("sync", "false").lower() == "true"
 
     if sync:
