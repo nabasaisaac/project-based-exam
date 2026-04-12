@@ -197,7 +197,7 @@ def top_rated(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def movie_detail_tmdb(request, tmdb_id):
-
+    """Fetch full movie details from TMDB, optionally syncing to local DB."""
     sync = request.query_params.get("sync", "false").lower() == "true"
 
     if sync:
@@ -208,7 +208,10 @@ def movie_detail_tmdb(request, tmdb_id):
 
     data = tmdb.get_movie_details(tmdb_id)
     if not data:
-        return Response({"error": "Movie not found"}, status=404)
+        return Response(
+            {"error": "Movie not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     return Response(data)
 
@@ -216,9 +219,13 @@ def movie_detail_tmdb(request, tmdb_id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def search_people(request):
+    """Search TMDB for actors/directors by name."""
     query = request.query_params.get("q", "").strip()
     if not query:
-        return Response({"error": "Query parameter 'q' is required"}, status=400)
+        return Response(
+            {"error": "Query parameter 'q' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     data = tmdb.search_people(query)
     return Response(data)
@@ -400,6 +407,7 @@ def discover_filtered(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def compare_movies(request):
+    """Compare two movies side-by-side by TMDB IDs."""
     ids_str = request.query_params.get("ids", "")
     ids = [int(i.strip()) for i in ids_str.split(",") if i.strip().isdigit()]
 
