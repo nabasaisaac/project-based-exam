@@ -126,3 +126,68 @@ class TMDBMovieSerializerTest(TestCase):
         data = serializer.data
         self.assertEqual(data["genre_ids"], [])
         self.assertIsNone(data["year"])
+
+class SearchEndpointTest(TestCase):
+    """Test the /api/movies/search/ endpoint."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_search_requires_query(self):
+        response = self.client.get("/api/movies/search/")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())
+
+    @patch("movies.views.tmdb")
+    def test_search_returns_results(self, mock_tmdb):
+        mock_tmdb.search_movies.return_value = {
+            "results": [
+                {
+                    "id": 550,
+                    "title": "Fight Club",
+                    "overview": "Test",
+                    "release_date": "1999-10-15",
+                    "vote_average": 8.4,
+                    "vote_count": 25000,
+                    "popularity": 60.5,
+                    "poster_path": "/p.jpg",
+                    "backdrop_path": "/b.jpg",
+                    "genre_ids": [18],
+                }
+            ],
+            "total_pages": 1,
+            "total_results": 1,
+        }
+        response = self.client.get("/api/movies/search/?q=fight+club")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["query"], "fight club")
+
+
+class TrendingEndpointTest(TestCase):
+    """Test the /api/movies/trending/ endpoint."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch("movies.views.tmdb")
+    def test_trending_returns_paginated(self, mock_tmdb):
+        mock_tmdb.get_trending_movies.return_value = {
+            "results": [],
+            "total_pages": 5,
+            "total_results": 100,
+        }
+        response = self.client.get("/api/movies/trending/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("results", data)
+        self.assertIn("total_pages", data)
+
+    @patch("movies.views.tmdb")
+    def test_trending_accepts_window_param(self, mock_tmdb):
+        mock_tmdb.get_trending_movies.return_value = {"results": [], "total_pages": 1}
+        self.client.get("/api/movies/trending/?window=day")
+        mock_tmdb.get_trending_movies.assert_called_with(time_window="day", page=1)        
+    
+        
