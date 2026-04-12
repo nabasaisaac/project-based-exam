@@ -306,3 +306,25 @@ export default function MarathonPage() {
     </main>
   );
 }
+
+function StatBadge({
+  icon: Icon,
+  label,
+  value,
+  highlight = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Icon className={`w-4 h-4 ${highlight ? "text-gold" : "text-white/20"}`} />
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-white/20">{label}</p>
+        <p className={`text-sm font-semibold ${highlight ? "text-gold" : "text-white/70"}`}>{value}</p>
+      </div>
+    </div>
+  );
+}
