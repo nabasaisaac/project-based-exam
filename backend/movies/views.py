@@ -222,7 +222,10 @@ def search_people(request):
     """Search TMDB for actors/directors by name."""
     query = request.query_params.get("q", "").strip()
     if not query:
-        return Response({"error": "Query parameter 'q' is required"}, status=400)
+        return Response(
+            {"error": "Query parameter 'q' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     data = tmdb.search_people(query)
     return Response(data)
