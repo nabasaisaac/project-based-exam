@@ -219,6 +219,7 @@ def movie_detail_tmdb(request, tmdb_id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def search_people(request):
+    """Search TMDB for actors/directors by name."""
     query = request.query_params.get("q", "").strip()
     if not query:
         return Response({"error": "Query parameter 'q' is required"}, status=400)
