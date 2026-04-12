@@ -407,6 +407,7 @@ def discover_filtered(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def compare_movies(request):
+    """Compare two movies side-by-side by TMDB IDs."""
     ids_str = request.query_params.get("ids", "")
     ids = [int(i.strip()) for i in ids_str.split(",") if i.strip().isdigit()]
 
