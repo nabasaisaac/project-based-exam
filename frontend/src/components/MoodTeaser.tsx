@@ -1,3 +1,4 @@
+//minor improvement: cleaned  up styling and ensured Tailwind compatibility, added hover effects and transitions for better UX, and made the mood pills more visually appealing with gradients and icons.
 "use client";
 
 import Link from "next/link";
