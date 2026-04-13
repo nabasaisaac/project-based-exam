@@ -190,4 +190,21 @@ class TrendingEndpointTest(TestCase):
         self.client.get("/api/movies/trending/?window=day")
         mock_tmdb.get_trending_movies.assert_called_with(time_window="day", page=1)        
     
+class MoodEndpointTest(TestCase):
+    """Test mood list and mood-filtered movie endpoints."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_mood_list(self):
+        response = self.client.get("/api/movies/moods/")
+        self.assertEqual(response.status_code, 200)
+        moods = response.json()
+        self.assertTrue(len(moods) > 0)
+        self.assertIn("slug", moods[0])
+        self.assertIn("label", moods[0])
+
+    def test_unknown_mood_returns_404(self):
+        response = self.client.get("/api/movies/moods/nonexistent-mood/")
+        self.assertEqual(response.status_code, 404)
         
