@@ -37,13 +37,14 @@ class TMDBService:
 
     def _get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         """Make Get request to TMDB with caching."""
+        endpoint = endpoint.lstrip("/")
         params_json = json.dumps(params or {}, sort_keys=True, separators=(",", ":"))
         cache_key = f"tmdb:{endpoint}:{params_json}"
         cached = cache.get(cache_key)
         if cached is not None:
             return cached
 
-        url = f"{self.base_url}/{endpoint}"
+        url = f"{self.base_url.rstrip('/')}/{endpoint}"
         try:
             response = self.session.get(url, params=params or {}, timeout=10)
             response.raise_for_status()
