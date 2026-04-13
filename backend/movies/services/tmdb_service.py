@@ -40,7 +40,7 @@ class TMDBService:
         params_json = json.dumps(params or {}, sort_keys=True, separators=(",", ":"))
         cache_key = f"tmdb:{endpoint}:{params_json}"
         cached = cache.get(cache_key)
-        if cached:
+        if cached is not None:
             return cached
 
         url = f"{self.base_url}/{endpoint}"
