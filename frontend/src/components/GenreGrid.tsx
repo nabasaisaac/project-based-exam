@@ -58,7 +58,7 @@ export default function GenreGrid() {
               </div>
             </div>
 
-            <span className="relative z-10 text-xs font-semibold text-white/60 group-hover:text-white transition-colors duration-300">
+            <span className="relative z-10 text-xs font-semibold text-white/70 group-hover:text-white transition-colors duration-300">
               {genre.name}
             </span>
 
