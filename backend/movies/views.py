@@ -81,9 +81,8 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(wiki_data)
 
 
-## Genre ViewSet
 class GenreViewSet(viewsets.ReadOnlyModelViewSet):
-    """Genres API."""
+    """Genre listing and genre-filtered movie browsing."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [AllowAny]
