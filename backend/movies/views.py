@@ -114,10 +114,8 @@ class GenreViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
-## Person ViewSet
-
 class PersonViewSet(viewsets.ReadOnlyModelViewSet):
-    """People (directors, actors) API."""
+    """People (directors, actors) with on-demand TMDB enrichment."""
     queryset = Person.objects.all()
     permission_classes = [AllowAny]
 
