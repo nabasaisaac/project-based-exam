@@ -18,6 +18,8 @@ import {
 } from "@/lib/utils";
 import type { MovieCompact } from "@/types/movie";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
 function getLikedMovies(): any[] {
   if (typeof window === "undefined") return [];
   try {
@@ -84,7 +86,7 @@ export default function MovieDetailPage() {
         const data = await moviesAPI.getDetail(tmdbId);
         setMovie(data);
         const recData = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/movies/tmdb/${tmdbId}/`
+          `${API_BASE}/movies/tmdb/${tmdbId}/`
         ).then(r => r.json());
 
         const recs = recData?.recommendations?.results || [];
@@ -114,7 +116,7 @@ export default function MovieDetailPage() {
       // Take a random liked movie and get its recommendations
       const randomLiked = liked[Math.floor(Math.random() * liked.length)];
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/movies/tmdb/${randomLiked.id}/`
+        `${API_BASE}/movies/tmdb/${randomLiked.id}/`
       ).then(r => r.json());
       const recs = res?.recommendations?.results || [];
       setLikedRecs(recs.slice(0, 10));
