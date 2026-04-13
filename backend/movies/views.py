@@ -39,8 +39,8 @@ def _paginated_tmdb_response(data: dict, page: int) -> dict:
     }
 
 
-## Movie ViewSet
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
+    """CRUD-less viewset for locally synced movies with TMDB enrichment."""
     queryset = Movie.objects.prefetch_related("genres", "directors").all()
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
