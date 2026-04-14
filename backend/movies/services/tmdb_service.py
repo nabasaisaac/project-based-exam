@@ -48,7 +48,11 @@ class TMDBService:
         try:
             response = self.session.get(url, params=params or {}, timeout=10)
             response.raise_for_status()
-            data = response.json()
+            try:
+                data = response.json()
+            except ValueError:
+                logger.error(f"TMDB API returned non-JSON for {endpoint}")
+                return {}
             cache.set(cache_key, data, self._cache_ttl_for(endpoint))
             return data
         except requests.RequestException as e:
