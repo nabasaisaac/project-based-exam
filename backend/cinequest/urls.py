@@ -3,6 +3,9 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.routers import DefaultRouter
 from . import views
+# Instantiate a DefaultRouter to automatically generate standardized 
+# CRUD endpoints for movies, genres, and people.
+
 router = DefaultRouter()
 router.register(r"list", views.MovieViewSet, basename="movie")
 router.register(r"genres", views.GenreViewSet, basename="genre")
