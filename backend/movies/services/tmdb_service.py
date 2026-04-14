@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 CACHE_TTL_SHORT = 600      # 10 min for trending/search
 CACHE_TTL_MEDIUM = 3600    # 1 hour for movie details
 CACHE_TTL_LONG = 86400     # 24 hours for genres/people
+TMDB_TIMEOUT_SECONDS = 10
+WIKIPEDIA_TIMEOUT_SECONDS = 5
 
 
 class TMDBService:
@@ -46,7 +48,7 @@ class TMDBService:
 
         url = f"{self.base_url.rstrip('/')}/{endpoint}"
         try:
-            response = self.session.get(url, params=params or {}, timeout=10)
+            response = self.session.get(url, params=params or {}, timeout=TMDB_TIMEOUT_SECONDS)
             response.raise_for_status()
             try:
                 data = response.json()
@@ -292,12 +294,12 @@ class WikipediaService:
 
         try:
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{url_quote(search_title, safe='')}"
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=WIKIPEDIA_TIMEOUT_SECONDS)
 
             if response.status_code == 404 and year:
                 # Fallback without year
                 url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{url_quote(f'{title} (film)', safe='')}"
-                response = requests.get(url, timeout=5)
+                response = requests.get(url, timeout=WIKIPEDIA_TIMEOUT_SECONDS)
 
             if response.status_code == 200:
                 data = response.json()
