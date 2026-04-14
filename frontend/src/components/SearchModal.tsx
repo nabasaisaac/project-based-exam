@@ -31,8 +31,15 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
     }
   }, [open]);
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (open) {
+          onClose();
+        }
+      }
       if (e.key === "Escape" && open) onClose();
     };
     window.addEventListener("keydown", handler);
