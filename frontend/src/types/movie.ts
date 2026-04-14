@@ -96,6 +96,7 @@ export interface AuthTokens {
 }
 
 // Watchlist Types
+// Tracks user-specific data for movies saved to a personal 'Watch Later' list.
 
 export interface WatchlistItem {
   id: number;
