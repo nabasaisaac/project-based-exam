@@ -28,6 +28,7 @@ urlpatterns = [
     path("tmdb/<int:tmdb_id>/", views.movie_detail_tmdb, name="movie-detail-tmdb"),
     path("people/search/", views.search_people, name="search-people"),
     path("moods/", views.mood_list, name="mood-list"),
+    # Routes for themed content discovery based on string slugs (e.g., 'horror', 'fast-paced').
     path("moods/<str:mood_slug>/", views.mood_movies, name="mood-movies"),
     path("discover/", views.discover_filtered, name="discover-filtered"),
     path("compare/", views.compare_movies, name="compare-movies"),
