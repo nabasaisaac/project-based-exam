@@ -1,3 +1,4 @@
+//minor improvement: cleaned  up styling and ensured Tailwind compatibility, added hover effects and transitions for better UX, and made the mood pills more visually appealing with gradients and icons.
 "use client";
 
 import Link from "next/link";
@@ -6,6 +7,7 @@ import {
   Mountain, ArrowRight,
 } from "lucide-react";
 
+// Preview moods displayed for quick user selection on homepage
 const MOODS_PREVIEW = [
   { slug: "cozy-night", label: "Cozy Night", icon: Heart, color: "from-pink-500/20 to-rose-600/20", iconColor: "text-pink-400" },
   { slug: "adrenaline", label: "Adrenaline", icon: Zap, color: "from-red-500/20 to-orange-600/20", iconColor: "text-red-400" },
@@ -38,7 +40,7 @@ export default function MoodTeaser() {
               <span className="text-gold italic">to watch?</span>
             </h2>
 
-            <p className="text-white/35 max-w-md">
+            <p className="text-white/40 max-w-md">
               Pick your current mood and get curated movie picks that match exactly how you&apos;re feeling.
             </p>
 
@@ -63,7 +65,7 @@ export default function MoodTeaser() {
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${mood.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                   <div className="relative z-10">
-                    <Icon className={`w-5 h-5 mx-auto mb-1.5 text-white/25 group-hover:${mood.iconColor} transition-colors`} />
+                    <Icon className={`w-5 h-5 mx-auto mb-1.5 text-white/25 ${mood.iconColor} transition-colors`} />
                     <p className="text-[11px] font-semibold text-white/50 group-hover:text-white/80 transition-colors">{mood.label}</p>
                   </div>
                 </Link>

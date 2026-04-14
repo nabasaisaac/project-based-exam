@@ -25,7 +25,9 @@ export default function HomePage() {
           moviesAPI.topRated(),
         ]);
 
-        if (trendRes.status === "fulfilled") setTrending(trendRes.value);
+        if (trendRes.status === "fulfilled") {
+  setTrending(trendRes.value?.results || []);
+}
         if (npRes.status === "fulfilled") setNowPlaying(npRes.value.results);
         if (trRes.status === "fulfilled") setTopRated(trRes.value.results);
       } catch (err) {

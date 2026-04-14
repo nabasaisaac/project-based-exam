@@ -48,17 +48,17 @@ export default function GenreGrid() {
           <Link
             key={genre.id}
             href={`/genre/${genre.slug}?id=${genre.id}`}
-            className={`genre-card glass-card group relative overflow-hidden rounded-xl p-4 flex flex-col items-center text-center gap-3 animate-slide-up stagger-${Math.min(i % 6 + 1, 6)}`}
+            className={`genre-card glass-card group relative overflow-hidden rounded-xl p-4 flex flex-col items-center text-center gap-3 animate-slide-up stagger-1
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${genre.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
             <div className="relative z-10">
               <div className={`w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center group-hover:border-transparent transition-all duration-300`}>
-                <Icon className={`genre-icon w-5 h-5 text-white/40 group-hover:${genre.iconColor} transition-all duration-300`} />
+               <Icon className={`genre-icon w-5 h-5 text-white/40 ${genre.iconColor} transition-all duration-300`} /> 
               </div>
             </div>
 
-            <span className="relative z-10 text-xs font-semibold text-white/60 group-hover:text-white transition-colors duration-300">
+            <span className="relative z-10 text-xs font-semibold text-white/70 group-hover:text-white transition-colors duration-300">
               {genre.name}
             </span>
 
