@@ -1,3 +1,11 @@
+"""
+Views for the Movies app.
+
+Provides REST endpoints for movie search, trending, discovery,
+genre browsing, mood-based filtering, and movie comparisons.
+All TMDB data is fetched via TMDBService and serialized for the frontend.
+"""
+
 import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -17,8 +25,20 @@ logger = logging.getLogger(__name__)
 tmdb = TMDBService()
 sync_service = MovieSyncService()
 
-## Movie ViewSet
+
+def _paginated_tmdb_response(data: dict, page: int) -> dict:
+    """Build a consistent paginated response dict from raw TMDB data."""
+    results = data.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return {
+        "results": serializer.data,
+        "total_pages": data.get("total_pages", 1),
+        "total_results": data.get("total_results", 0),
+        "page": page,
+    }
+
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
+    """CRUD-less viewset for locally synced movies with TMDB enrichment."""
     queryset = Movie.objects.prefetch_related("genres", "directors").all()
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
@@ -59,9 +79,8 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(wiki_data)
 
 
-## Genre ViewSet
 class GenreViewSet(viewsets.ReadOnlyModelViewSet):
-    """Genres API."""
+    """Genre listing and genre-filtered movie browsing."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [AllowAny]
@@ -93,10 +112,8 @@ class GenreViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
-## Person ViewSet
-
 class PersonViewSet(viewsets.ReadOnlyModelViewSet):
-    """People (directors, actors) API."""
+    """People (directors, actors) with on-demand TMDB enrichment."""
     queryset = Person.objects.all()
     permission_classes = [AllowAny]
 
@@ -120,11 +137,14 @@ class PersonViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-## standalone endpoints
+# ---------------------------------------------------------------------------
+# Standalone API endpoints (function-based views)
+# ---------------------------------------------------------------------------
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def search_movies(request):
+    """Search TMDB movies by title. Requires query param `q`."""
     query = request.query_params.get("q", "").strip()
     page = int(request.query_params.get("page", 1))
 
@@ -135,61 +155,44 @@ def search_movies(request):
         )
 
     data = tmdb.search_movies(query, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "total_results": data.get("total_results", 0),
-        "page": page,
-        "query": query,
-    })
+    response = _paginated_tmdb_response(data, page)
+    response["query"] = query
+    return Response(response)
 
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def trending_movies(request):
+    """Return trending movies for a given time window (day/week)."""
     window = request.query_params.get("window", "week")
     page = int(request.query_params.get("page", 1))
 
     data = tmdb.get_trending_movies(time_window=window, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "page": page,
-    })
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def now_playing(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_now_playing(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    """Return movies currently in theatres."""
+    page = int(request.query_params.get("page", 1))
+    data = tmdb.get_now_playing(page=page)
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_rated(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_top_rated_movies(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    """Return highest-rated movies of all time."""
+    page = int(request.query_params.get("page", 1))
+    data = tmdb.get_top_rated_movies(page=page)
+    return Response(_paginated_tmdb_response(data, page))
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def movie_detail_tmdb(request, tmdb_id):
-
+    """Fetch full movie details from TMDB, optionally syncing to local DB."""
     sync = request.query_params.get("sync", "false").lower() == "true"
 
     if sync:
@@ -200,7 +203,10 @@ def movie_detail_tmdb(request, tmdb_id):
 
     data = tmdb.get_movie_details(tmdb_id)
     if not data:
-        return Response({"error": "Movie not found"}, status=404)
+        return Response(
+            {"error": "Movie not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     return Response(data)
 
@@ -208,9 +214,13 @@ def movie_detail_tmdb(request, tmdb_id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def search_people(request):
+    """Search TMDB for actors/directors by name."""
     query = request.query_params.get("q", "").strip()
     if not query:
-        return Response({"error": "Query parameter 'q' is required"}, status=400)
+        return Response(
+            {"error": "Query parameter 'q' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     data = tmdb.search_people(query)
     return Response(data)
@@ -337,7 +347,6 @@ def mood_movies(request, mood_slug):
     })
 
 
-### advanced discover / filters
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def discover_filtered(request):
@@ -387,11 +396,10 @@ def discover_filtered(request):
     })
 
 
-## movie comparison
-
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def compare_movies(request):
+    """Compare two movies side-by-side by TMDB IDs."""
     ids_str = request.query_params.get("ids", "")
     ids = [int(i.strip()) for i in ids_str.split(",") if i.strip().isdigit()]
 
@@ -410,22 +418,170 @@ def compare_movies(request):
     return Response({"movies": movies})
 
 
+# ---------------------------------------------------------------------------
+# Movie Night Planner (Innovation Feature)
+# ---------------------------------------------------------------------------
+
+MARATHON_THEMES = {
+    "classic-marathon": {
+        "label": "Classic Cinema Marathon",
+        "description": "A journey through the greatest films ever made",
+        "emoji": "🎬",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 5000,
+        "vote_average_gte": 8.0,
+    },
+    "action-packed": {
+        "label": "Action-Packed Night",
+        "description": "Non-stop thrills from start to finish",
+        "emoji": "💥",
+        "genres": "28,53",
+        "sort_by": "popularity.desc",
+        "vote_count_gte": 2000,
+    },
+    "rom-com-evening": {
+        "label": "Rom-Com Evening",
+        "description": "Laughs, love, and feel-good vibes",
+        "emoji": "💕",
+        "genres": "10749,35",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 1000,
+        "vote_average_gte": 6.5,
+    },
+    "sci-fi-odyssey": {
+        "label": "Sci-Fi Odyssey",
+        "description": "Explore the universe from your couch",
+        "emoji": "🚀",
+        "genres": "878",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 2000,
+        "vote_average_gte": 7.0,
+    },
+    "horror-night": {
+        "label": "Horror Night",
+        "description": "Lights off, volume up — dare you to finish all three",
+        "emoji": "👻",
+        "genres": "27",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 1500,
+        "vote_average_gte": 6.5,
+    },
+    "animated-adventure": {
+        "label": "Animated Adventure",
+        "description": "Magical stories for the young at heart",
+        "emoji": "✨",
+        "genres": "16",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 3000,
+        "vote_average_gte": 7.5,
+    },
+    "director-spotlight": {
+        "label": "Award Winners Spotlight",
+        "description": "Critically acclaimed masterpieces",
+        "emoji": "🏆",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 8000,
+        "vote_average_gte": 8.2,
+    },
+}
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def compare_two_movies(request):
-    id_string = request.query_params.get("ids", "")
-    movie_ids = [int(i.strip()) for i in id_string.split(",") if i.strip().isdigit()]
+def marathon_themes(request):
+    """Return available movie marathon themes."""
+    themes = [
+        {
+            "slug": slug,
+            "label": t["label"],
+            "description": t["description"],
+            "emoji": t["emoji"],
+        }
+        for slug, t in MARATHON_THEMES.items()
+    ]
+    return Response(themes)
 
-    if len(movie_ids) < 2:
-        return Response({"error": "Provide at least 2 TMDB IDs: ?ids=550,680"}, status=400)
 
-    movie_list = []
-    for tid in movie_ids[:2]:
-        result = tmdb.get_movie_details(tid)
-        if result and "id" in result:
-            movie_list.append(result)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def generate_marathon(request, theme_slug):
+    """
+    Generate a curated movie marathon (3-5 films) for a given theme.
+    
+    Fetches candidates from TMDB discover, shuffles lightly for variety,
+    then selects movies that together form a balanced viewing session
+    with total runtime and intermission suggestions.
+    """
+    import random
 
-    if len(movie_list) < 2:
-        return Response({"error": "Could not fetch both movies"}, status=404)
+    theme = MARATHON_THEMES.get(theme_slug)
+    if not theme:
+        return Response({"error": "Unknown theme"}, status=status.HTTP_404_NOT_FOUND)
 
-    return Response({"movies": movie_list})
+    movie_count = int(request.query_params.get("count", 3))
+    movie_count = max(2, min(movie_count, 5))
+
+    params = {
+        "sort_by": theme.get("sort_by", "popularity.desc"),
+        "page": 1,
+    }
+    if "genres" in theme:
+        params["with_genres"] = theme["genres"]
+    if "vote_count_gte" in theme:
+        params["vote_count.gte"] = theme["vote_count_gte"]
+    if "vote_average_gte" in theme:
+        params["vote_average.gte"] = theme["vote_average_gte"]
+
+    # Fetch two pages for variety, then pick a diverse set
+    all_candidates = []
+    for page_num in range(1, 3):
+        params["page"] = page_num
+        data = tmdb.discover_movies(**params)
+        all_candidates.extend(data.get("results", []))
+
+    if len(all_candidates) < movie_count:
+        return Response(
+            {"error": "Not enough movies found for this theme"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Shuffle the top 20 candidates for variety across requests
+    top_pool = all_candidates[:20]
+    random.shuffle(top_pool)
+
+    # Select movies, preferring variety in runtime
+    selected = []
+    seen_ids = set()
+    for candidate in top_pool:
+        if candidate["id"] not in seen_ids:
+            seen_ids.add(candidate["id"])
+            selected.append(candidate)
+        if len(selected) >= movie_count:
+            break
+
+    serializer = TMDBMovieSerializer(selected, many=True)
+    serialized_movies = serializer.data
+
+    total_runtime = sum(m.get("runtime") or 120 for m in selected)
+    intermission_minutes = 15 * (len(selected) - 1)
+
+    return Response({
+        "theme": {
+            "slug": theme_slug,
+            "label": theme["label"],
+            "description": theme["description"],
+            "emoji": theme["emoji"],
+        },
+        "movies": serialized_movies,
+        "stats": {
+            "movie_count": len(selected),
+            "total_runtime_minutes": total_runtime,
+            "intermission_minutes": intermission_minutes,
+            "total_evening_minutes": total_runtime + intermission_minutes,
+            "average_rating": round(
+                sum(m.get("vote_average", 0) for m in selected) / len(selected), 1
+            ),
+        },
+    })
+
+
