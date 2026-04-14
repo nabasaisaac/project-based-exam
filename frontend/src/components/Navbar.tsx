@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Search, Menu, X, Film, Compass, Star, Clapperboard,
   Sparkles, BarChart3, User, LogOut, LogIn, ArrowLeftRight,
+  Popcorn,
 } from "lucide-react";
 import SearchModal from "@/components/SearchModal";
 import AuthModal from "@/components/AuthModal";
@@ -17,10 +18,24 @@ export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  const toggleSearch = useCallback(() => setSearchOpen((prev) => !prev), []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        toggleSearch();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [toggleSearch]);
+
   const navLinks = [
     { href: "/search", label: "Discover", icon: Compass },
     { href: "/genre", label: "Genres", icon: Clapperboard },
     { href: "/mood", label: "Mood", icon: Sparkles },
+    { href: "/marathon", label: "Movie Night", icon: Popcorn },
     { href: "/compare", label: "Compare", icon: ArrowLeftRight },
     { href: "/search?sort=top_rated", label: "Top Rated", icon: Star },
   ];
