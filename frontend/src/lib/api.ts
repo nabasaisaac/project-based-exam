@@ -167,6 +167,11 @@ export const moviesAPI = {
 
   compare: (id1: number, id2: number) =>
     apiFetch<{ movies: any[] }>(`/movies/compare/?ids=${id1},${id2}`),
+
+  getMarathonThemes: () => apiFetch<any[]>("/movies/marathon/"),
+
+  generateMarathon: (slug: string, count = 3) =>
+    apiFetch<any>(`/movies/marathon/${slug}/?count=${count}`),
 };
 
 // Genres API
