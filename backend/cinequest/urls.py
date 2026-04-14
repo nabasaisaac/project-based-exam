@@ -23,6 +23,8 @@ urlpatterns = [
     path("trending/", views.trending_movies, name="trending-movies"),
     path("now-playing/", views.now_playing, name="now-playing"),
     path("top-rated/", views.top_rated, name="top-rated"),
+# Dynamic route to fetch specific movie data from the external TMDB API 
+# using the unique integer ID.
     path("tmdb/<int:tmdb_id>/", views.movie_detail_tmdb, name="movie-detail-tmdb"),
     path("people/search/", views.search_people, name="search-people"),
     path("moods/", views.mood_list, name="mood-list"),
