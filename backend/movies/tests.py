@@ -207,4 +207,50 @@ class MoodEndpointTest(TestCase):
     def test_unknown_mood_returns_404(self):
         response = self.client.get("/api/movies/moods/nonexistent-mood/")
         self.assertEqual(response.status_code, 404)
-        
+class MarathonEndpointTest(TestCase):
+    """Test the Movie Night Planner (marathon) endpoints."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_marathon_themes_list(self):
+        response = self.client.get("/api/movies/marathon/")
+        self.assertEqual(response.status_code, 200)
+        themes = response.json()
+        self.assertTrue(len(themes) >= 5)
+        self.assertIn("slug", themes[0])
+        self.assertIn("label", themes[0])
+        self.assertIn("emoji", themes[0])
+
+    def test_unknown_theme_returns_404(self):
+        response = self.client.get("/api/movies/marathon/nonexistent-theme/")
+        self.assertEqual(response.status_code, 404)
+
+    @patch("movies.views.tmdb")
+    def test_generate_marathon_returns_movies(self, mock_tmdb):
+        mock_tmdb.discover_movies.return_value = {
+            "results": [
+                {
+                    "id": i,
+                    "title": f"Movie {i}",
+                    "overview": "Test overview",
+                    "release_date": "2024-01-01",
+                    "vote_average": 8.0,
+                    "vote_count": 5000,
+                    "popularity": 50.0,
+                    "poster_path": "/test.jpg",
+                    "backdrop_path": "/back.jpg",
+                    "genre_ids": [28],
+                    "runtime": 120,
+                }
+                for i in range(10)
+            ]
+        }
+        response = self.client.get("/api/movies/marathon/action-packed/?count=3")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("theme", data)
+        self.assertIn("movies", data)
+        self.assertIn("stats", data)
+        self.assertEqual(len(data["movies"]), 3)
+        self.assertEqual(data["theme"]["slug"], "action-packed")        
