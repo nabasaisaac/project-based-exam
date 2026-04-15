@@ -68,3 +68,61 @@ class MovieModelTest(TestCase):
 
     def test_genre_relationship(self):
         self.assertIn(self.genre, self.movie.genres.all())
+
+class PersonModelTest(TestCase):
+    """Verify Person model creation and profile URL."""
+
+    def test_create_person(self):
+        person = Person.objects.create(
+            tmdb_id=819,
+            name="Edward Norton",
+            profile_path="/5XBzD5WuTyVQZeS4VI25z2moMeY.jpg",
+            known_for_department="Acting",
+        )
+        self.assertEqual(str(person), "Edward Norton")
+        self.assertIn("/w185/", person.profile_url)
+
+    def test_profile_url_none_when_empty(self):
+        person = Person.objects.create(tmdb_id=1, name="Unknown", profile_path="")
+        self.assertIsNone(person.profile_url)
+
+
+class TMDBMovieSerializerTest(TestCase):
+    """Verify the raw TMDB response serializer handles edge cases."""
+
+    def test_valid_tmdb_payload(self):
+        payload = {
+            "id": 550,
+            "title": "Fight Club",
+            "overview": "A ticking-Loss bomb...",
+            "release_date": "1999-10-15",
+            "vote_average": 8.4,
+            "vote_count": 25000,
+            "popularity": 60.5,
+            "poster_path": "/poster.jpg",
+            "backdrop_path": "/backdrop.jpg",
+            "genre_ids": [18, 53],
+        }
+        serializer = TMDBMovieSerializer(payload)
+        data = serializer.data
+        self.assertEqual(data["id"], 550)
+        self.assertEqual(data["year"], 1999)
+        self.assertIn("poster_url", data)
+
+    def test_missing_genre_ids_uses_default(self):
+        """genre_ids is optional — should default to empty list."""
+        payload = {
+            "id": 1,
+            "title": "Test",
+            "overview": "",
+            "release_date": "",
+            "vote_average": 0,
+            "vote_count": 0,
+            "popularity": 0,
+            "poster_path": None,
+            "backdrop_path": None,
+        }
+        serializer = TMDBMovieSerializer(payload)
+        data = serializer.data
+        self.assertEqual(data["genre_ids"], [])
+        self.assertIsNone(data["year"])
