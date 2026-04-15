@@ -103,8 +103,8 @@ class RecommendationEngine:
             data = self.tmdb.discover_movies(
                 with_genres=genre_id,
                 sort_by="vote_average.desc",
-                vote_count_gte=100,  
                 page=page,
+                **{"vote_count.gte": 100},
             )
             movies = data.get("results", [])
             for m in movies:
