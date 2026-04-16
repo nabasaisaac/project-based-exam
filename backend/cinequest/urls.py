@@ -1,6 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.routers import DefaultRouter
+from . import views
+# Instantiate a DefaultRouter to automatically generate standardized 
+# CRUD endpoints for movies, genres, and people.
+
+router = DefaultRouter()
+router.register(r"list", views.MovieViewSet, basename="movie")
+router.register(r"genres", views.GenreViewSet, basename="genre")
+router.register(r"people", views.PersonViewSet, basename="person")
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -9,4 +19,20 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/movies/", include("movies.urls")),
     path("api/recommendations/", include("recommendations.urls")),
+    path("search/", views.search_movies, name="search-movies"),
+    path("trending/", views.trending_movies, name="trending-movies"),
+    path("now-playing/", views.now_playing, name="now-playing"),
+    path("top-rated/", views.top_rated, name="top-rated"),
+# Dynamic route to fetch specific movie data from the external TMDB API 
+# using the unique integer ID.
+    path("tmdb/<int:tmdb_id>/", views.movie_detail_tmdb, name="movie-detail-tmdb"),
+    path("people/search/", views.search_people, name="search-people"),
+    path("moods/", views.mood_list, name="mood-list"),
+    # Routes for themed content discovery based on string slugs (e.g., 'horror', 'fast-paced').
+    path("moods/<str:mood_slug>/", views.mood_movies, name="mood-movies"),
+    path("discover/", views.discover_filtered, name="discover-filtered"),
+    path("compare/", views.compare_movies, name="compare-movies"),
+    path("marathon/", views.marathon_themes, name="marathon-themes"),
+    path("marathon/<str:theme_slug>/", views.generate_marathon, name="generate-marathon"),
+    path("", include(router.urls)),
 ]
