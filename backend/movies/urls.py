@@ -18,5 +18,7 @@ urlpatterns = [
     path("moods/<str:mood_slug>/", views.mood_movies, name="mood-movies"),
     path("discover/", views.discover_filtered, name="discover-filtered"),
     path("compare/", views.compare_movies, name="compare-movies"),
+    path("marathon/", views.marathon_themes, name="marathon-themes"),
+    path("marathon/<str:theme_slug>/", views.generate_marathon, name="generate-marathon"),
     path("", include(router.urls)),
 ]

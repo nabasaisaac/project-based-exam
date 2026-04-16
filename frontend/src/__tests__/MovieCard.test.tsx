@@ -2,7 +2,7 @@
  * Component tests for MovieCard.
  * Verifies rendering of movie data, rating badges, and link generation.
  */
-// @ts-nocheck
+
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";

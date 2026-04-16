@@ -2,11 +2,9 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Clock, Film } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import MovieCard, { MovieCardSkeleton } from "@/components/MovieCard";
 import type { MovieCompact } from "@/types/movie";
-
-
 
 interface MovieCarouselProps {
   title: string;

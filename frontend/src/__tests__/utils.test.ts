@@ -2,7 +2,7 @@
  * Tests for shared utility functions used across the frontend.
  * Validates formatting, URL generation, and edge-case handling.
  */
-// @ts-nocheck
+
 import {
   formatRuntime,
   formatCurrency,

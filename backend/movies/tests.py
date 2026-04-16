@@ -31,10 +31,11 @@ class GenreModelTest(TestCase):
         Genre.objects.create(tmdb_id=28, name="Action", slug="action")
         with self.assertRaises(Exception):
             Genre.objects.create(tmdb_id=99, name="Action2", slug="action")
+
+
 class MovieModelTest(TestCase):
     """Verify Movie model properties and relationships."""
 
-    
     def setUp(self):
         self.genre = Genre.objects.create(tmdb_id=28, name="Action", slug="action")
         self.movie = Movie.objects.create(
@@ -68,6 +69,7 @@ class MovieModelTest(TestCase):
 
     def test_genre_relationship(self):
         self.assertIn(self.genre, self.movie.genres.all())
+
 
 class PersonModelTest(TestCase):
     """Verify Person model creation and profile URL."""
@@ -126,6 +128,7 @@ class TMDBMovieSerializerTest(TestCase):
         data = serializer.data
         self.assertEqual(data["genre_ids"], [])
         self.assertIsNone(data["year"])
+
 
 class SearchEndpointTest(TestCase):
     """Test the /api/movies/search/ endpoint."""
@@ -188,8 +191,9 @@ class TrendingEndpointTest(TestCase):
     def test_trending_accepts_window_param(self, mock_tmdb):
         mock_tmdb.get_trending_movies.return_value = {"results": [], "total_pages": 1}
         self.client.get("/api/movies/trending/?window=day")
-        mock_tmdb.get_trending_movies.assert_called_with(time_window="day", page=1)        
-    
+        mock_tmdb.get_trending_movies.assert_called_with(time_window="day", page=1)
+
+
 class MoodEndpointTest(TestCase):
     """Test mood list and mood-filtered movie endpoints."""
 
@@ -207,6 +211,8 @@ class MoodEndpointTest(TestCase):
     def test_unknown_mood_returns_404(self):
         response = self.client.get("/api/movies/moods/nonexistent-mood/")
         self.assertEqual(response.status_code, 404)
+
+
 class MarathonEndpointTest(TestCase):
     """Test the Movie Night Planner (marathon) endpoints."""
 
@@ -253,4 +259,4 @@ class MarathonEndpointTest(TestCase):
         self.assertIn("movies", data)
         self.assertIn("stats", data)
         self.assertEqual(len(data["movies"]), 3)
-        self.assertEqual(data["theme"]["slug"], "action-packed")        
+        self.assertEqual(data["theme"]["slug"], "action-packed")

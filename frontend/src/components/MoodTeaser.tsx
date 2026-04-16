@@ -9,12 +9,12 @@ import {
 
 // Preview moods displayed for quick user selection on homepage
 const MOODS_PREVIEW = [
-  { slug: "cozy-night", label: "Cozy Night", icon: Heart, color: "from-pink-500/20 to-rose-600/20", iconColor: "text-pink-400" },
-  { slug: "adrenaline", label: "Adrenaline", icon: Zap, color: "from-red-500/20 to-orange-600/20", iconColor: "text-red-400" },
-  { slug: "mind-bender", label: "Mind Bender", icon: Brain, color: "from-violet-500/20 to-purple-600/20", iconColor: "text-violet-400" },
-  { slug: "feel-good", label: "Feel Good", icon: Smile, color: "from-yellow-500/20 to-amber-500/20", iconColor: "text-yellow-400" },
-  { slug: "edge-of-seat", label: "Suspense", icon: Ghost, color: "from-slate-500/20 to-neutral-600/20", iconColor: "text-slate-400" },
-  { slug: "epic-adventure", label: "Adventure", icon: Mountain, color: "from-emerald-500/20 to-teal-600/20", iconColor: "text-emerald-400" },
+  { slug: "cozy-night", label: "Cozy Night", icon: Heart, color: "from-pink-500/20 to-rose-600/20", iconColor: "group-hover:text-pink-400" },
+  { slug: "adrenaline", label: "Adrenaline", icon: Zap, color: "from-red-500/20 to-orange-600/20", iconColor: "group-hover:text-red-400" },
+  { slug: "mind-bender", label: "Mind Bender", icon: Brain, color: "from-violet-500/20 to-purple-600/20", iconColor: "group-hover:text-violet-400" },
+  { slug: "feel-good", label: "Feel Good", icon: Smile, color: "from-yellow-500/20 to-amber-500/20", iconColor: "group-hover:text-yellow-400" },
+  { slug: "edge-of-seat", label: "Suspense", icon: Ghost, color: "from-slate-500/20 to-neutral-600/20", iconColor: "group-hover:text-slate-400" },
+  { slug: "epic-adventure", label: "Adventure", icon: Mountain, color: "from-emerald-500/20 to-teal-600/20", iconColor: "group-hover:text-emerald-400" },
 ];
 
 export default function MoodTeaser() {

@@ -1,4 +1,3 @@
-
 """
 Views for the Movies app.
 
@@ -37,7 +36,6 @@ def _paginated_tmdb_response(data: dict, page: int) -> dict:
         "total_results": data.get("total_results", 0),
         "page": page,
     }
-
 
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
     """CRUD-less viewset for locally synced movies with TMDB enrichment."""
@@ -349,7 +347,6 @@ def mood_movies(request, mood_slug):
     })
 
 
-### advanced discover / filters
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def discover_filtered(request):
@@ -399,8 +396,6 @@ def discover_filtered(request):
     })
 
 
-## movie comparison
-
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def compare_movies(request):
@@ -421,5 +416,172 @@ def compare_movies(request):
         return Response({"error": "Could not fetch both movies"}, status=404)
 
     return Response({"movies": movies})
+
+
+# ---------------------------------------------------------------------------
+# Movie Night Planner (Innovation Feature)
+# ---------------------------------------------------------------------------
+
+MARATHON_THEMES = {
+    "classic-marathon": {
+        "label": "Classic Cinema Marathon",
+        "description": "A journey through the greatest films ever made",
+        "emoji": "🎬",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 5000,
+        "vote_average_gte": 8.0,
+    },
+    "action-packed": {
+        "label": "Action-Packed Night",
+        "description": "Non-stop thrills from start to finish",
+        "emoji": "💥",
+        "genres": "28,53",
+        "sort_by": "popularity.desc",
+        "vote_count_gte": 2000,
+    },
+    "rom-com-evening": {
+        "label": "Rom-Com Evening",
+        "description": "Laughs, love, and feel-good vibes",
+        "emoji": "💕",
+        "genres": "10749,35",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 1000,
+        "vote_average_gte": 6.5,
+    },
+    "sci-fi-odyssey": {
+        "label": "Sci-Fi Odyssey",
+        "description": "Explore the universe from your couch",
+        "emoji": "🚀",
+        "genres": "878",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 2000,
+        "vote_average_gte": 7.0,
+    },
+    "horror-night": {
+        "label": "Horror Night",
+        "description": "Lights off, volume up — dare you to finish all three",
+        "emoji": "👻",
+        "genres": "27",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 1500,
+        "vote_average_gte": 6.5,
+    },
+    "animated-adventure": {
+        "label": "Animated Adventure",
+        "description": "Magical stories for the young at heart",
+        "emoji": "✨",
+        "genres": "16",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 3000,
+        "vote_average_gte": 7.5,
+    },
+    "director-spotlight": {
+        "label": "Award Winners Spotlight",
+        "description": "Critically acclaimed masterpieces",
+        "emoji": "🏆",
+        "sort_by": "vote_average.desc",
+        "vote_count_gte": 8000,
+        "vote_average_gte": 8.2,
+    },
+}
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def marathon_themes(request):
+    """Return available movie marathon themes."""
+    themes = [
+        {
+            "slug": slug,
+            "label": t["label"],
+            "description": t["description"],
+            "emoji": t["emoji"],
+        }
+        for slug, t in MARATHON_THEMES.items()
+    ]
+    return Response(themes)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def generate_marathon(request, theme_slug):
+    """
+    Generate a curated movie marathon (3-5 films) for a given theme.
+    
+    Fetches candidates from TMDB discover, shuffles lightly for variety,
+    then selects movies that together form a balanced viewing session
+    with total runtime and intermission suggestions.
+    """
+    import random
+
+    theme = MARATHON_THEMES.get(theme_slug)
+    if not theme:
+        return Response({"error": "Unknown theme"}, status=status.HTTP_404_NOT_FOUND)
+
+    movie_count = int(request.query_params.get("count", 3))
+    movie_count = max(2, min(movie_count, 5))
+
+    params = {
+        "sort_by": theme.get("sort_by", "popularity.desc"),
+        "page": 1,
+    }
+    if "genres" in theme:
+        params["with_genres"] = theme["genres"]
+    if "vote_count_gte" in theme:
+        params["vote_count.gte"] = theme["vote_count_gte"]
+    if "vote_average_gte" in theme:
+        params["vote_average.gte"] = theme["vote_average_gte"]
+
+    # Fetch two pages for variety, then pick a diverse set
+    all_candidates = []
+    for page_num in range(1, 3):
+        params["page"] = page_num
+        data = tmdb.discover_movies(**params)
+        all_candidates.extend(data.get("results", []))
+
+    if len(all_candidates) < movie_count:
+        return Response(
+            {"error": "Not enough movies found for this theme"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Shuffle the top 20 candidates for variety across requests
+    top_pool = all_candidates[:20]
+    random.shuffle(top_pool)
+
+    # Select movies, preferring variety in runtime
+    selected = []
+    seen_ids = set()
+    for candidate in top_pool:
+        if candidate["id"] not in seen_ids:
+            seen_ids.add(candidate["id"])
+            selected.append(candidate)
+        if len(selected) >= movie_count:
+            break
+
+    serializer = TMDBMovieSerializer(selected, many=True)
+    serialized_movies = serializer.data
+
+    total_runtime = sum(m.get("runtime") or 120 for m in selected)
+    intermission_minutes = 15 * (len(selected) - 1)
+
+    return Response({
+        "theme": {
+            "slug": theme_slug,
+            "label": theme["label"],
+            "description": theme["description"],
+            "emoji": theme["emoji"],
+        },
+        "movies": serialized_movies,
+        "stats": {
+            "movie_count": len(selected),
+            "total_runtime_minutes": total_runtime,
+            "intermission_minutes": intermission_minutes,
+            "total_evening_minutes": total_runtime + intermission_minutes,
+            "average_rating": round(
+                sum(m.get("vote_average", 0) for m in selected) / len(selected), 1
+            ),
+        },
+    })
 
 

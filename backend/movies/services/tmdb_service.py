@@ -1,13 +1,10 @@
-"""TMDB API client, syncing utilities, and Wikipedia enrichment helpers."""
-
-import json
 import logging
 from typing import Optional
 from urllib.parse import quote as url_quote
+
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.text import slugify
-
 import requests
 
 logger = logging.getLogger(__name__)
@@ -15,8 +12,6 @@ logger = logging.getLogger(__name__)
 CACHE_TTL_SHORT = 600      # 10 min for trending/search
 CACHE_TTL_MEDIUM = 3600    # 1 hour for movie details
 CACHE_TTL_LONG = 86400     # 24 hours for genres/people
-TMDB_TIMEOUT_SECONDS = 10
-WIKIPEDIA_TIMEOUT_SECONDS = 5
 
 
 class TMDBService:
@@ -30,32 +25,19 @@ class TMDBService:
 
     ### class helper functions
 
-    def _cache_ttl_for(self, endpoint: str) -> int:
-        if endpoint.startswith(("search/", "trending/")):
-            return CACHE_TTL_SHORT
-        if endpoint.startswith(("genre/", "person/")):
-            return CACHE_TTL_LONG
-        return CACHE_TTL_MEDIUM
-
     def _get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         """Make Get request to TMDB with caching."""
-        endpoint = endpoint.lstrip("/")
-        params_json = json.dumps(params or {}, sort_keys=True, separators=(",", ":"))
-        cache_key = f"tmdb:{endpoint}:{params_json}"
+        cache_key = f"tmdb:{endpoint}:{params}"
         cached = cache.get(cache_key)
-        if cached is not None:
+        if cached:
             return cached
 
-        url = f"{self.base_url.rstrip('/')}/{endpoint}"
+        url = f"{self.base_url}/{endpoint}"
         try:
-            response = self.session.get(url, params=params or {}, timeout=TMDB_TIMEOUT_SECONDS)
+            response = self.session.get(url, params=params or {}, timeout=10)
             response.raise_for_status()
-            try:
-                data = response.json()
-            except ValueError:
-                logger.error(f"TMDB API returned non-JSON for {endpoint}")
-                return {}
-            cache.set(cache_key, data, self._cache_ttl_for(endpoint))
+            data = response.json()
+            cache.set(cache_key, data, CACHE_TTL_MEDIUM)
             return data
         except requests.RequestException as e:
             logger.error(f"TMDB API error for {endpoint}: {e}")
@@ -283,9 +265,7 @@ class WikipediaService:
     @staticmethod
     def get_movie_summary(title: str, year: Optional[int] = None) -> dict:
         """getting  Wikipedia summary for a movie."""
-        search_title = f"{title} (film)"
-        if year:
-            search_title = f"{title} ({year} film)"
+        search_title = f"{title} ({year} film)" if year else f"{title} (film)"
 
         cache_key = f"wiki:{search_title}"
         cached = cache.get(cache_key)
@@ -294,12 +274,11 @@ class WikipediaService:
 
         try:
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{url_quote(search_title, safe='')}"
-            response = requests.get(url, timeout=WIKIPEDIA_TIMEOUT_SECONDS)
+            response = requests.get(url, timeout=5)
 
             if response.status_code == 404 and year:
-                # Fallback without year
                 url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{url_quote(f'{title} (film)', safe='')}"
-                response = requests.get(url, timeout=WIKIPEDIA_TIMEOUT_SECONDS)
+                response = requests.get(url, timeout=5)
 
             if response.status_code == 200:
                 data = response.json()

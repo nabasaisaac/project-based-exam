@@ -49,7 +49,6 @@ const THEMES: MarathonTheme[] = [
   { slug: "director-spotlight", label: "Award Winners", description: "Critically acclaimed masterpieces", emoji: "🏆" },
 ];
 
-
 export default function MarathonPage() {
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [movieCount, setMovieCount] = useState(3);
